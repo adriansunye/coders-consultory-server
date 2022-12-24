@@ -51,7 +51,7 @@ switch($method) {
 
     case "PUT":
         $consult = json_decode( file_get_contents('php://input') );
-        $sql = "UPDATE consults SET title= :tiltle, description =:description, image_path =:image_path, updated_at =:updated_at WHERE id = :id";
+        $sql = "UPDATE consults SET title= :title, description =:description, image_path =:image_path, updated_at =:updated_at WHERE id = :id";
         $stmt = $conn->prepare($sql);
         $updated_at = date('Y-m-d H:i:s');
         $stmt->bindParam(':id', $consult->id);
