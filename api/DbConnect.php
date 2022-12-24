@@ -1,12 +1,12 @@
 <?php
-namespace App\api;
+namespace Api;
 use \PDO;
 	/**
 	* Database Connection
 	*/
 	class DbConnect {
 		private $server = 'localhost';
-		private $dbname = 'react_crud';
+		private $dbname = 'coders_consultory_db';
 		private $user = 'root';
 		private $pass = '';
 

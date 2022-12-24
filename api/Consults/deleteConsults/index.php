@@ -1,5 +1,5 @@
 <?php
-namespace App\api;
+namespace Api;
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 header("Access-Control-Allow-Origin: *");
@@ -12,7 +12,7 @@ $sql = "DELETE FROM users WHERE id = :id";
 $path = explode('/', $_SERVER['REQUEST_URI']);
 
 $stmt = $conn->prepare($sql);
-$stmt->bindParam(':id', $path[5]);
+$stmt->bindParam(':id', $path[6]);
 
 if($stmt->execute()) {
     $response = ['status' => 1, 'message' => 'Record deleted successfully.'];

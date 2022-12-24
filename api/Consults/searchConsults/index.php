@@ -1,5 +1,5 @@
 <?php
-namespace App\api;
+namespace Api;
 use \PDO;
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -11,10 +11,10 @@ $objDb = new DbConnect;
 $conn = $objDb->connect();
 $sql = "SELECT * FROM users";
 $path = explode('/', $_SERVER['REQUEST_URI']);
-if (isset($path[5]) && is_numeric($path[5])) {
+if (isset($path[6]) && is_numeric($path[6])) {
     $sql .= " WHERE id = :id";
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':id', $path[5]);
+    $stmt->bindParam(':id', $path[6]);
     $stmt->execute();
     $users = $stmt->fetch(PDO::FETCH_ASSOC);
 } else {
