@@ -31,14 +31,57 @@ switch($method) {
         echo json_encode($consults);
         break;
     case "POST":
-        $consult = json_decode( file_get_contents('php://input') );
+        $upload_dir = "uploads/";
+    
+        if($_FILES['image']){   
+
+            $file_name = $_FILES["image"]["name"];
+            $file_tmp_name = $_FILES["image"]["tmp_name"];
+            $error = $_FILES["image"]["error"];
+        
+            if($error > 0){
+                $response = [
+                    "status" => "error",
+                    "error" => true,
+                    "message" => "Error uploading the file!"
+                ];
+            }else{
+                $random_name = rand(1000,1000000)."-".$file_name;
+                $upload_name = $upload_dir.strtolower($random_name);
+                $upload_name = preg_replace('/\s+/', '-', $upload_name);
+                if(move_uploaded_file($file_tmp_name , $upload_name)) {
+
+                    // Convert uploaded file into Base64
+                    $path = './'.$upload_name;
+                    $type = pathinfo($path, PATHINFO_EXTENSION);
+                    $data = file_get_contents($path);
+                    $base64URL = 'data:image/' . $type . ';base64,' . base64_encode($data);
+
+                    $response = [
+                        "status" => "success",
+                        "error" => false,
+                        "message" => "File uploaded successfully",
+                        "base64" => $base64URL,
+                    ];
+                }else
+                {
+                    $response = [
+                        "status" => "danger",
+                        "error" => true,
+                        "url" =>  $file_name,
+                        "message" => "Error uploading the file!"
+                    ];
+                }
+            }
+        }
+        $consult = json_decode( $_POST["_jsonData"] );
         $sql = "INSERT INTO consults(id, title, description, user, image_path, created_at) VALUES(null, :title, :description, :user, :image_path, :created_at)";
         $stmt = $conn->prepare($sql);
         $created_at = date('Y-m-d H:i:s');
         $stmt->bindParam(':title', $consult->title);
         $stmt->bindParam(':description', $consult->description);
         $stmt->bindParam(':user', $consult->user);
-        $stmt->bindParam(':image_path', $consult->image_path);
+        $stmt->bindParam(':image_path', $base64URL);
         $stmt->bindParam(':created_at', $created_at);
 
         if($stmt->execute()) {
@@ -47,6 +90,7 @@ switch($method) {
             $response = ['status' => 0, 'message' => 'Failed to create record.'];
         }
         echo json_encode($response);
+    
         break;
 
     case "PUT":
