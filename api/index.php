@@ -19,6 +19,7 @@ $pathServer = explode('/', $_SERVER['REQUEST_URI']);
 $method = $_SERVER['REQUEST_METHOD'];
 switch ($method) {
     case "GET":
+        if ($pathServer[3] === "consults") {
         $sql = "SELECT * FROM consults";
         $path = explode('/', $_SERVER['REQUEST_URI']);
         if (isset($path[4]) && is_numeric($path[4])) {
@@ -34,24 +35,51 @@ switch ($method) {
         }
 
         echo json_encode($consults);
+    }else {
 
+        $sql = "SELECT * FROM users";
+        $path = explode('/', $_SERVER['REQUEST_URI']);
+        if ($path[4] === "admin") {
+            $sql .= " WHERE admin = 1";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $user = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        else {
+            $sql .= " WHERE username = :username";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':username', $path[4]);
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+        
+
+        echo json_encode($user);
+
+    }
         break;
     case "POST":
         if ($pathServer[3] === "consults") {
 
-            if ($_FILES['image']) {
+            if (isset($_FILES['image'])) {
                 $base64URL = saveImage("uploads/");
+            }
+            else{
+                $base64URL = "no image";
             }
             
             $consult = json_decode($_POST["_jsonData"]);
-            $sql = "INSERT INTO consults(id, title, description, user, image_path, created_at) VALUES(null, :title, :description, :user, :image_path, :created_at)";
+            $sql = "INSERT INTO consults(id, title, description, username, coder, image_path, created_at, updated_at) 
+                    VALUES(null, :title, :description, :username, :coder, :image_path, :created_at, :updated_at)";
             $stmt = $conn->prepare($sql);
             $created_at = date('Y-m-d H:i:s');
             $stmt->bindParam(':title', $consult->title);
             $stmt->bindParam(':description', $consult->description);
-            $stmt->bindParam(':user', $consult->user);
+            $stmt->bindParam(':username', $consult->username);
+            $stmt->bindParam(':coder', $consult->coder);
             $stmt->bindParam(':image_path', $base64URL);
             $stmt->bindParam(':created_at', $created_at);
+            $stmt->bindParam(':updated_at', $created_at);
 
             if ($stmt->execute()) {
                 $response = ['status' => 1, 'message' => 'Record created successfully.'];
@@ -60,19 +88,30 @@ switch ($method) {
             }
             echo json_encode($response);
         } else {
-            if ($_FILES['image']) {
+            if (isset($_FILES['image'])) {
                 $base64URL = saveImage("uploads/users/profilePictures/");
             }
-            $ur = "url";
+            else{
+                $base64URL = "no image";
+            }
             $user = json_decode($_POST["_jsonData"]);
-            $sql = "INSERT INTO users (id, user, email, password, profile_picture_path, created_at) VALUES(null, :user, :email, :password, :profile_picture_path, :created_at)";
+            $sql = "INSERT INTO users (username, email, password, profile_picture_path, created_at, updated_at) 
+                    VALUES(:username, :email, :password, :profile_picture_path, :created_at, :updated_at)";
             $stmt = $conn->prepare($sql);
             $created_at = date('Y-m-d H:i:s');
-            $stmt->bindParam(':user', $user->user);
+             // The plain text password to be hashed
+            $plaintext_password =  $user->password;
+            
+            // The hash of the password that
+            // can be stored in the database
+            $hash = password_hash($plaintext_password, PASSWORD_DEFAULT);
+
+            $stmt->bindParam(':username', $user->user);
             $stmt->bindParam(':email', $user->email);
-            $stmt->bindParam(':password', $user->password);
+            $stmt->bindParam(':password', $hash);
             $stmt->bindParam(':profile_picture_path', $base64URL);
             $stmt->bindParam(':created_at', $created_at);
+            $stmt->bindParam(':updated_at', $created_at);
 
             if ($stmt->execute()) {
                 $response = ['status' => 1, 'message' => 'Record created successfully.'];
